@@ -42,7 +42,7 @@ class SOCKET:
             if role=='server':
                 self.socket.bind(('0.0.0.0',port))
                 self.socket.listen(10)
-                self.accept()
+                self.socket,self.address=self.socket.accept()
             if role=='client':
                 self.address=(ip,port)
                 self.socket.connect(self.address)
@@ -60,7 +60,7 @@ class SOCKET:
     def recv(self,buffersize):
         if self.proto=='UDP':
             data,self.address=self.socket.recvfrom(buffersize)
-            return data,self.address
+            return data
         if self.proto=='TCP':
             data = self.socket.recv(buffersize)
             return data
@@ -68,5 +68,5 @@ class SOCKET:
 
 if __name__ == '__main__':
     stream=extractStream('Youtube_no_retransmits.pcap',client_ip="172.20.161.222")
-    print(client[-1])
-    print(server[-1])
+    print(stream['c2s'][0])
+    print(stream['s2c'][0])

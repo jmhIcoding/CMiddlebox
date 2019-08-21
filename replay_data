@@ -1,0 +1,1 @@
+{"s2c": [{"proto": "TCP", "id": 2, "src_ip": "172.217.6.46", "dst_ip": "172.20.161.222", "src_port": 443, "dst_port": 34010, "payload": 
