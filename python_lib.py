@@ -2,6 +2,7 @@ __author__ = 'dk'
 import  scapy
 from scapy.all import *
 from scapy.utils import PcapReader
+from binary_op import  randomize
 def extractStream(pcapfilename,client_ip):
     ####
     #每个pcap应该只含有一条流
@@ -68,5 +69,7 @@ class SOCKET:
 
 if __name__ == '__main__':
     stream=extractStream('Youtube_no_retransmits.pcap',client_ip="172.20.161.222")
-    print(stream['c2s'][0])
-    print(stream['s2c'][0])
+    print(stream['c2s'][0]['payload'])
+    payload = stream['c2s'][0]['payload']
+    payload = randomize(payload,0,2)
+    print(payload)
