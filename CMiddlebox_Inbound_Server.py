@@ -41,6 +41,7 @@ class Replay_Server(Replay):
                 self.sock.send(payload)
                 self.current_packet_id +=1
                 print('send {packet_id:%d,hash:%d}'%(self.current_packet_id,hash_int(payload)))
+                time.sleep(0.1)
     def recv_thread(self):
         while True:
             data = self.sock.recv(4096)
