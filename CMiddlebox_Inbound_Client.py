@@ -119,6 +119,7 @@ class Replay_Client(Replay):
                     hash_value = hash_int(data)
                     packet_id = self.server_payload_hash_to_id.get(hash_value,0)
                     self.recv_set.add(packet_id)
+                    print('recv: {id:%d,hash:%d}'%(packet_id,hash_value))
                 else:
                     self.sock.close()
                     break
