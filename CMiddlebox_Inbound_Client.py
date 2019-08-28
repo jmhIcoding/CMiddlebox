@@ -112,14 +112,17 @@ class Replay_Client(Replay):
     def sender_thread(self):
         pass
     def recv_thread(self):
+        index = 0
         while True:
-                data = self.sock.recv(4096)
+                data = self.sock.recv(len(self.stream['s2c'][index]['payload']))
                 if data:
                     #收到了重放的响应数据包
                     hash_value = hash_int(data)
                     packet_id = self.server_payload_hash_to_id.get(hash_value,0)
-                    self.recv_set.add(packet_id)
-                    print('recv: {id:%d,hash:%d}'%(packet_id,hash_value))
+                    if packet_id > 0:
+                        self.recv_set.add(packet_id)
+                        print('recv: {id:%d,hash:%d}'%(packet_id,hash_value))
+                        index+=1
                 else:
                     self.sock.close()
                     break
