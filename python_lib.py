@@ -32,7 +32,7 @@ def extractStream(pcapfilename,client_ip):
             elif dst_ip==client_ip:
                 packet.setdefault('direction','s2c')
                 stream['s2c'].append(packet)
-            stream['payload'].append(packet)
+            stream['payload'].append(payload)
     return stream
 
 class SOCKET:
@@ -82,6 +82,7 @@ class SOCKET:
 if __name__ == '__main__':
     stream=extractStream('Youtube_no_retransmits.pcap',client_ip="172.20.161.222")
     print(stream['c2s'][0]['payload'])
+    print(stream['payload'])
     payload = stream['c2s'][0]['payload']
     payload = randomize(payload,0,2)
     print(payload)
