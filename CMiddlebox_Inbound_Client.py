@@ -14,7 +14,7 @@ import time
 from  threading import  Thread
 class Replay_Client(Replay):
     def __init__(self,pcap_name,pcap_client_ip,replay_server_ip,replay_server_start_port=None):
-        super.__init__(pcap_name,pcap_client_ip)
+        super(Replay_Client,self).__init__(pcap_name,pcap_client_ip)
         self.replay_server_ip = replay_server_ip    #把数据包重放到这个ip主机上
         if replay_server_start_port ==None:
             #起始端口
@@ -27,7 +27,7 @@ class Replay_Client(Replay):
         self.recv_set=set()
 
     def replay(self,replay_port=None):
-        if port ==None:
+        if replay_port==None:
             port = self.replay_server_start_port
         self.sock = SOCKET(proto=self.stream['c2s'][0]['proto'],role='client',ip=self.replay_server_ip,port=port)
         self.current_bidirection_packet_id  = 1   #目前双向通信的 packet id
@@ -93,7 +93,7 @@ class Replay_Client(Replay):
             while True:
                 if i >=len(keyword_start):
                     break
-                if (i+1)<len(keyword_start) && keyword_end[i] == keyword_start[i+1] :
+                if (i+1)<len(keyword_start) and keyword_end[i] == keyword_start[i+1] :
                     tmp=keyword_end[i+1]
                     keyword_start.remove(keyword_start[i+1])
                     keyword_end.remove(tmp)
