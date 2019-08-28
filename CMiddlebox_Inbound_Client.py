@@ -32,7 +32,7 @@ class Replay_Client(Replay):
         self.sock = SOCKET(proto=self.stream['c2s'][0]['proto'],role='client',ip=self.replay_server_ip,port=port)
         self.current_bidirection_packet_id  = 1   #目前双向通信的 packet id
         self.current_single_curse_packet_id = 0
-        self.thread = Thread(target=self.recv_thread,args=(self))
+        self.thread = Thread(target=self.recv_thread,args=([self]))
         self.thread.start()
         while self.current_single_curse_packet_id < len(self.stream['c2s']):
             payload = copy.deepcopy(self.stream['c2s'][self.current_single_curse_packet_id]['payload'])

@@ -28,8 +28,8 @@ class Replay_Server(Replay):
             port = self.replay_server_start_port
         self.sock = SOCKET(proto=self.stream['s2c'][0]['proto'],role='server',ip="0.0.0.0",port=port)
         self.current_packet_id = -1
-        self.th_recv = Thread(target=self.recv_thread,args=(self))
-        self.th_send = Thread(target=self.send_thread,args=(self))
+        self.th_recv = Thread(target=self.recv_thread,args=([self]))
+        self.th_send = Thread(target=self.send_thread,args=([self]))
         self.th_recv.start()
         self.th_send.start()
         self.th_recv.join()
