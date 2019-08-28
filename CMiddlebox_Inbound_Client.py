@@ -122,3 +122,6 @@ class Replay_Client(Replay):
                 else:
                     self.sock.close()
                     break
+if __name__ == '__main__':
+    client =Replay_Client(pcap_name='Youtube_no_retransmits.pcap',pcap_client_ip="172.20.161.222",replay_server_ip=config['outbound_ip'])
+    client.replay()
