@@ -5,7 +5,7 @@ from  flask import  Flask
 import  threading
 stream = python_lib.extractStream("Youtube_no_retransmits.pcap",client_ip="172.20.161.222")['s2c']
 server_ids = set()
-for each in stream:
+for each in stream
     server_ids.add(each['id'])
 current_id = 1
 current_curse = 0

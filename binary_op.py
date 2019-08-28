@@ -4,6 +4,8 @@ import  struct
 def randomize(payload,start,end,method='invert'):
     if isinstance(payload,bytes):
         payload = bytearray(payload)
+    if not isinstance(payload,bytearray):
+        raise Exception("payload should bytes or bytearray object. however %s received"%type(payload))
     if method =='invert':
         for i in range(start,end):
             payload[i] = ~payload[i] % 256
