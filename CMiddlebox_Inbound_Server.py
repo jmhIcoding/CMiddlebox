@@ -14,7 +14,7 @@ import time
 from  threading import  Thread
 class Replay_Server(Replay):
     def __init__(self,pcap_name,pcap_client_ip,replay_server_start_port=None):
-        super.__init__(pcap_name,pcap_client_ip)
+        super.__init__(self.Replay,pcap_name,pcap_client_ip)
         if replay_server_start_port ==None:
             #起始端口
             self.replay_server_start_port = self.stream['c2s'][0]['dst_port']
