@@ -38,12 +38,14 @@ class Replay_Server(Replay):
         while True:
             if self.current_packet_id + 1 in self.server_packets_id:
                 self.sock.send(self.stream['payload'][self.current_packet_id+1])
+                self.current_packet_id +=1
     def recv_thread(self):
         while True:
             data = self.sock.recv(4096)
             if data:
                 hash_value = hash_int(data)
                 packet_id = self.payload_hash_to_id.get(hash_value,-1)
+                print('recv {id:%d,hash:%d}'%(packet_id,hash_value))
                 if packet_id > 0:
                     self.current_packet_id = packet_id
                     self.recv_db.insert({'packet_id':packet_id,'hash_value':hash_value})
