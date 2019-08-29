@@ -39,28 +39,30 @@ class Replay_Server(Replay):
         self.th_recv.start()
         self.th_send.start()
         self.th_recv.join()
-        #self.th_send.join()
+        self.th_send.join()
     def send_thread(self):
         while True:
                 packet_id= self.inbound_sock.recv(32)
                 packet_id = struct.unpack("!i",packet_id)[0]
                 payload = self.stream['payload'][packet_id]
                 self.sock.send(payload)
-                print('send {packet_id:%d,hash:%d}'%(self.current_packet_id,hash_int(payload)))
+                print('server send {packet_id:%d,hash:%d}'%(packet_id,hash_int(payload)))
     def recv_thread(self):
         while True:
             data = self.sock.recv(4096)
             if data:
                 hash_value = hash_int(data)
                 packet_id = self.payload_hash_to_id.get(hash_value,-1)
-                print('recv {id:%d,hash:%d}'%(packet_id,hash_value))
+                print('server recv {id:%d,hash:%d}'%(packet_id,hash_value))
                 if packet_id > 0:
                     self.recv_db.insert({'packet_id':packet_id,'hash_value':hash_value})
                     if packet_id + 1 in self.server_packets_id:
-                        payload = self.stream['payload'][self.current_packet_id+1-1]
+                        payload = self.stream['payload'][packet_id+1]
                         self.sock.send(payload)
             else:
                 self.sock.close()
+                if self.th_send :
+                    self.th_send._stop()
                 break
 if __name__ == '__main__':
     server = Replay_Server(pcap_name='Youtube_no_retransmits.pcap',pcap_client_ip="172.20.161.222")

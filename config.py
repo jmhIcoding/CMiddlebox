@@ -4,7 +4,7 @@ import  json
 config = {
         'inbound_port':9901,
         'outbound_port':9900,
-        'outbound_ip':'172.16.30.180',
+        'outbound_ip':'172.16.30.230',
         'outbound_url':'/api/cmiddle/outbound',
         'outbound_next_packet_url':'/api/cmiddle/npacket',
         'mongodb_ip':'172.16.30.180',

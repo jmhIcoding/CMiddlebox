@@ -27,13 +27,20 @@ class Replay_Client(Replay):
         self.keyword_db = MongoDBase(ip=config['mongodb_ip'],tablename='keyword')
         self.recv_set=set()
         self.inbound_sock = SOCKET('UDP','client',ip=config['outbound_ip'],port=config['inbound_port'])
+        self.request_packet_id = self.stream['s2c'][0]['id']
+        self.sock=None
     def request_new_reply(self,packet_id):
+        self.request_packet_id = packet_id
+
         payload = struct.pack('!i',packet_id)
         self.inbound_sock.send(payload)
+    def reset_sock(self):
+        self.sock = SOCKET(proto=self.stream['c2s'][0]['proto'],role='client',ip=self.replay_server_ip,port=port)
     def replay(self,replay_port=None):
         if replay_port==None:
             port = self.replay_server_start_port
-        self.sock = SOCKET(proto=self.stream['c2s'][0]['proto'],role='client',ip=self.replay_server_ip,port=port)
+        #self.sock = SOCKET(proto=self.stream['c2s'][0]['proto'],role='client',ip=self.replay_server_ip,port=port)
+        self.reset_sock()
         self.current_bidirection_packet_id  = 1   #目前双向通信的 packet id
         self.current_single_curse_packet_id = 0
         self.thread = Thread(target=self.recv_thread)
@@ -48,9 +55,8 @@ class Replay_Client(Replay):
                 #原始数据包就可以直接通过,那么处理下一个client端的数据包
                 while (packet_id +1) in self.server_packets_id and (packet_id +1) not in self.recv_set:
                     self.request_new_reply(packet_id+1)
-                    print('wait for next packet from server...')
-                    time.sleep(0.05)
-
+                    print('client wait for %d.'%(packet_id+1))
+                    packet_id +=1
             else:
                 #原始数据包被拦截
                 keyword_start,keyword_len = self.search_keyword(0,len(payload),payload,packet_id)
@@ -59,11 +65,11 @@ class Replay_Client(Replay):
                     self.keyword.add(keyword)
                     self.keyword_db.insert(keyword)
             self.current_single_curse_packet_id += 1
-        self.thread.join()
         self.sock.close()
+        #self.thread.join()
     def search_keyword(self,l,r,payload,packet_id):
-        if l+1==r:
-            return l,1
+        if l==r:
+            return l,0
         if l<r :
             mid = (l+r)/2
             payload_left_modified = randomize(payload,l,mid)
@@ -117,17 +123,16 @@ class Replay_Client(Replay):
     def sender_thread(self):
         pass
     def recv_thread(self):
-        index = 0
         while True:
-                data = self.sock.recv(len(self.stream['s2c'][index]['payload']))
+                #data = self.sock.recv(min(1460,len(self.stream['s2c'][self.request_packet_id]['payload'])))
+                data = self.sock.recv(len(self.stream['payload'][self.request_packet_id]))
                 if data:
                     #收到了重放的响应数据包
                     hash_value = hash_int(data)
                     packet_id = self.server_payload_hash_to_id.get(hash_value,0)
                     if packet_id > 0:
                         self.recv_set.add(packet_id)
-                        print('recv: {id:%d,hash:%d}'%(packet_id,hash_value))
-                        index+=1
+                        print('client recv: {id:%d,hash:%d}'%(packet_id,hash_value))
                 else:
                     self.sock.close()
                     break

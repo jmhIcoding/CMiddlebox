@@ -9,7 +9,7 @@ def extractStream(pcapfilename,client_ip):
     ####
     packets = rdpcap(pcapfilename)
     count = 1
-    stream={'s2c':[],'c2s':[],'payload':[]}
+    stream={'s2c':[],'c2s':[],'payload':[b'0']}
     for data in packets:
         src_ip = data['IP'].src
         dst_ip = data['IP'].dst
