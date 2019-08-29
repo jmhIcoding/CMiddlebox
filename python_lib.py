@@ -64,7 +64,7 @@ class SOCKET:
             raise Exception('socket is not prepared!!!!')
         if self.proto=='TCP':
             return  self.socket.send(payload)
-        if send.proto=='UDP':
+        if self.proto=='UDP':
             return self.socket.sendto(payload,self.address)
     def recv(self,buffersize):
         if self.flag ==False:
