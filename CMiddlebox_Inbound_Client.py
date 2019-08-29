@@ -58,26 +58,28 @@ class Replay_Client(ReplayDator):
                     #self.keyword_db.insert(keyword)
     def search_keyword(self,l,r,packet_id):
         payload = self.stream['c2s'][packet_id]['payload']
-        if l==r:
+        if l>=r:
             return l,0
         if l<r :
-            mid = (l+r)/2
+            mid = int((l+r)/2)
             payload_left_modified = randomize(payload,l,mid)
             payload_right_modified=randomize(payload,mid+1,r)
 
             #Divide into 2 sepearate branches
             self.stream['c2s'][packet_id]['payload']=payload_left_modified
             remote_port = self.requry_remote_port()
-            if replay_client(self.stream,self.replay_server_ip,remote_port,self.proto) == False:
+            if replay_client(self.stream,self.replay_server_ip,remote_port,self.proto) == True:
                 #Never go through middle box,means payload left contains keyword
+                self.stream['c2s'][packet_id]['payload']=payload
                 lkeyword_start,lkeyword_len_=self.search_keyword(l,mid,packet_id)
             else:
                 lkeyword_start,lkeyword_len=[l],[0]
 
             self.stream['c2s'][packet_id]['payload']=payload_right_modified
             remote_port = self.requry_remote_port()
-            if replay_client(self.stream,self.replay_server_ip,remote_port,self.proto)==False:
+            if replay_client(self.stream,self.replay_server_ip,remote_port,self.proto)==True:
                 #Means payload right contains keyword
+                self.stream['c2s'][packet_id]['payload']=payload
                 rkeyword_start,rkeyword_len =self.search_keyword(mid+1,r,packet_id)
             else:
                 rkeyword_start,rkeyword_len=[mid+1],[0]

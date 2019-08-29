@@ -50,14 +50,14 @@ class Replay:
             self.payload_hash_to_id[hash_value]=each['id']
             self.server_packets_id.add(each['id'])
 
-def replay_client(_stream,remote_ip,remote_port,proto):
+def replay_client(_stream,remote_ip,remote_port,proto,thres=5):
     ############
     ######
     ######
     #给定一组_stream(里面有c2s,也有s2c),然后对这组数据进行重放,看能否重放完整个流
     #返回值,应该是true/false(true表示整个流程都重放完整,false表示中途就被拦截)
     ############
-    rst = True
+    rst = False
     client_ids = {1}
     stream = _stream['c2s']
     for each in stream:
@@ -76,18 +76,25 @@ def replay_client(_stream,remote_ip,remote_port,proto):
                 send_ids.add(current_id)
                 current_curse =current_curse +1
                 current_id += 1
+
                 action = True
+                if current_id >thres:
+                    break
             while current_id not in client_ids:
                 data = sock.recv(len(_stream['payload'][current_id]))
                 print('recv %d'%current_id)
                 recv_ids.add(current_id)
                 current_id += 1
                 action = True
+                if current_id > thres:
+                    break
             if action==False:
                 break
     except:
         pass
     if current_id==len(_stream['payload'])-1:
+        rst = True
+    if current_id > thres:
         rst = True
     try:
         sock.socket.shutdown(2)
@@ -109,7 +116,7 @@ def is_port_used(ip,port,proto):
         return False
     finally:
         s.close()
-def replay_server(_stream,local_ip="0.0.0.0",local_port=0):
+def replay_server(_stream,local_ip="0.0.0.0",local_port=0,thres=5):
     stream = _stream['s2c']
     proto = stream[0]['proto']
     server_ids = set()
@@ -129,6 +136,8 @@ def replay_server(_stream,local_ip="0.0.0.0",local_port=0):
                 recv_ids.add(current_id)
                 current_id += 1
                 action=True
+                if current_id >5 :
+                    break
             while current_id in server_ids:
                 payload=stream[current_curse]['payload']
                 sock.send(payload)
@@ -136,7 +145,10 @@ def replay_server(_stream,local_ip="0.0.0.0",local_port=0):
                 send_ids.add(current_id)
                 current_curse = current_curse + 1
                 current_id += 1
+
                 action = True
+                if current_id >5 :
+                    break
             if action==False:
                 break
                 #已经没有任何动作了
