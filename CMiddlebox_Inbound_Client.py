@@ -49,6 +49,7 @@ class Replay_Client(Replay):
                 while (packet_id +1) in self.server_packets_id and (packet_id +1) not in self.recv_set:
                     self.request_new_reply(packet_id+1)
                     print('wait for next packet from server...')
+                    time.sleep(0.05)
 
             else:
                 #原始数据包被拦截
