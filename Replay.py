@@ -89,10 +89,11 @@ def replay_client(_stream,remote_ip,remote_port,proto):
         pass
     if current_id==len(_stream['payload'])-1:
         rst = True
-
-    sock.socket.shutdown(2)
-    sock.close()
-
+    try:
+        sock.socket.shutdown(2)
+        sock.close()
+    except :
+        pass
     return rst
 def is_port_used(ip,port,proto):
     if proto=='TCP':
@@ -139,8 +140,8 @@ def replay_server(_stream,local_ip="0.0.0.0",local_port=0):
             if action==False:
                 break
                 #已经没有任何动作了
+        #sock.socket.shutdown(2)
+        sock.socket.close()
     except:
         pass
-    finally:
-        sock.socket.shutdown(2)
-        sock.socket.close()
+
