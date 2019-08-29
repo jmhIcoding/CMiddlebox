@@ -54,7 +54,7 @@ class SOCKET:
         if proto=='UDP':
             self.socket = socket.socket(type=socket.SOCK_DGRAM)
             if role=='server':
-                self.socket.bind(("0.0.0.0"),port)
+                self.socket.bind(("0.0.0.0",port))
                 self.flag =True
             if role=='client':
                 self.address=(ip,port)
