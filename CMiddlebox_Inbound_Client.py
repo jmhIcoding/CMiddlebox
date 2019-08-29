@@ -2,7 +2,8 @@ __author__ = 'dk'
 '''
     带内通信信道,主要实现客户端中数据包的重放流程
 '''
-from  Replay import Replay
+from  Replay import  ReplayDator
+from  Replay import  replay_client
 from python_lib import  SOCKET,randomize
 from hash import  hash_int
 from  threading import  Semaphore
@@ -13,50 +14,42 @@ import  requests
 import time
 import  struct
 from  threading import  Thread
-class Replay_Client(Replay):
-    def __init__(self,pcap_name,pcap_client_ip,replay_server_ip,replay_server_start_port=None,inbound_port=None):
+class Replay_Client(ReplayDator):
+    def __init__(self,pcap_name,pcap_client_ip,replay_server_ip=None,replay_server_start_port=None,inbound_port=None):
+        '''
+        :param pcap_name:       待重放的pcap 文件名
+        :param pcap_client_ip:  pcap文件里面的客户端ip
+        :param replay_server_start_port: 重放的起始端口
+        :param inbound_port:
+        :return:
+        '''
         super(Replay_Client,self).__init__(pcap_name,pcap_client_ip)
-        self.replay_server_ip = config['outbound_ip']    #把数据包重放到这个ip主机上
-        if replay_server_start_port ==None:
-            #起始端口
+        if replay_server_ip==None:
+        #重放的目标ip
+            self.replay_server_ip = config['outbound_ip']    #把数据包重放到这个ip主机上
+        else:
+            self.replay_server_ip = replay_server_ip
+
+        if replay_server_start_port == None:
+        #重放的起始端口
             self.replay_server_start_port = self.stream['c2s'][0]['dst_port']
         else:
             self.replay_server_start_port = replay_server_start_port
         self.go_through_semapher = Semaphore(value=1)
-        self.keyword=set()#{{"start":,"len":,"packet_id":,"content":,}}
-        self.keyword_db = MongoDBase(ip=config['mongodb_ip'],tablename='keyword')
-        self.recv_set=set()
-        self.inbound_sock = SOCKET('UDP','client',ip=config['outbound_ip'],port=config['inbound_port'])
-        self.request_packet_id = self.stream['s2c'][0]['id']
-        self.sock=None
-    def request_new_reply(self,packet_id):
-        self.request_packet_id = packet_id
 
-        payload = struct.pack('!i',packet_id)
-        self.inbound_sock.send(payload)
-    def reset_sock(self):
-        self.sock = SOCKET(proto=self.stream['c2s'][0]['proto'],role='client',ip=self.replay_server_ip,port=port)
+        #寻到的关键词
+        self.keyword=set()  #{{"start":,"len":,"packet_id":,"content":,}}
+        self.keyword_db = MongoDBase(ip=config['mongodb_ip'],tablename='keyword')
+    def requry_remote_port(self):
+        rst = self.replay_server_start_port
+
+        return rst
     def replay(self,replay_port=None):
-        if replay_port==None:
-            port = self.replay_server_start_port
-        #self.sock = SOCKET(proto=self.stream['c2s'][0]['proto'],role='client',ip=self.replay_server_ip,port=port)
-        self.reset_sock()
-        self.current_bidirection_packet_id  = 1   #目前双向通信的 packet id
-        self.current_single_curse_packet_id = 0
-        self.thread = Thread(target=self.recv_thread)
-        self.thread.start()
         while self.current_single_curse_packet_id < len(self.stream['c2s']):
-            payload = copy.deepcopy(self.stream['c2s'][self.current_single_curse_packet_id]['payload'])
-            self.sock.send(payload)
-            #检查是否服务端是否收到数据包
-            hash_value =hash_int(payload)
-            packet_id = self.payload_hash_to_id.get(hash_value,0)
-            if self.server_checker(packet_id,hash_value)==True:
+            remote_port=self.requry_remote_port()
+            if replay_client(self.stream,self.replay_server_ip,remote_port,)==True:
                 #原始数据包就可以直接通过,那么处理下一个client端的数据包
-                while (packet_id +1) in self.server_packets_id and (packet_id +1) not in self.recv_set:
-                    self.request_new_reply(packet_id+1)
-                    print('client wait for %d.'%(packet_id+1))
-                    packet_id +=1
+                self.current_single_curse_packet_id +=1
             else:
                 #原始数据包被拦截
                 keyword_start,keyword_len = self.search_keyword(0,len(payload),payload,packet_id)
