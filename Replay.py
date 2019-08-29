@@ -1,7 +1,8 @@
 __author__ = 'dk'
 from hash import  hash_int
 import python_lib
-class ReplayDator(self,pcapname,pcap_client_ip):
+import  socket
+class ReplayDator():
     #################################
     ###########
     ###########
@@ -66,29 +67,50 @@ def replay_client(_stream,remote_ip,remote_port,proto):
     recv_ids=set()
     send_ids=set()
     sock = python_lib.SOCKET(proto,'client',remote_ip,remote_port)
-    while True:
-        action = False
-        while current_id in client_ids:
-            payload = stream[current_curse]['payload']
-            sock.send(payload)
-            send_ids.add(current_id)
-            current_curse =current_curse +1
-            current_id += 1
-            action = True
-        while current_id not in client_ids:
-            data = sock.recv(len(_stream['payload'][current_id]))
-            print('recv %d'%current_id)
-            recv_ids.add(current_id)
-            current_id += 1
-            action = True
-        if action==False:
-            break
+    try:
+        while True:
+            action = False
+            while current_id in client_ids:
+                payload = stream[current_curse]['payload']
+                sock.send(payload)
+                send_ids.add(current_id)
+                current_curse =current_curse +1
+                current_id += 1
+                action = True
+            while current_id not in client_ids:
+                data = sock.recv(len(_stream['payload'][current_id]))
+                print('recv %d'%current_id)
+                recv_ids.add(current_id)
+                current_id += 1
+                action = True
+            if action==False:
+                break
+    except:
+        pass
     if current_id==len(_stream['payload'])-1:
         rst = True
 
+    sock.socket.shutdown(2)
+    sock.close()
+
     return rst
-def replay_server(_stream,proto,local_port,local_ip="0.0.0.0"):
+def is_port_used(ip,port,proto):
+    if proto=='TCP':
+        proto = socket.SOCK_STREAM
+    elif proto=='UDP':
+        proto=socket.SOCK_DGRAM
+    s=socket.socket(socket.AF_INET,type=proto)
+    try:
+        s.connect((ip,port))
+        s.shutdown(2)
+        return True
+    except OSError:
+        return False
+    finally:
+        s.close()
+def replay_server(_stream,local_ip="0.0.0.0",local_port=0):
     stream = _stream['s2c']
+    proto = stream[0]['proto']
     server_ids = set()
     for each in stream:
         server_ids.add(each['id'])
@@ -97,22 +119,28 @@ def replay_server(_stream,proto,local_port,local_ip="0.0.0.0"):
     recv_ids = set()
     send_ids = set()
     sock = python_lib.SOCKET(proto,'server',local_ip,local_port)
-    while True:
-        action = False
-        while current_id not in server_ids:
-            data = sock.recv(len(_stream['payload'][current_id]))
-            print('recv %d'%current_id)
-            recv_ids.add(current_id)
-            current_id += 1
-            action=True
-        while current_id in server_ids:
-            payload=stream[current_curse]['payload']
-            sock.send(payload)
-            print('send %d'%current_id)
-            send_ids.add(current_id)
-            current_curse = current_curse + 1
-            current_id += 1
-            action = True
-        if action==False:
-            break
-            #已经没有任何动作了
+    try:
+        while True:
+            action = False
+            while current_id not in server_ids:
+                data = sock.recv(len(_stream['payload'][current_id]))
+                print('recv %d'%current_id)
+                recv_ids.add(current_id)
+                current_id += 1
+                action=True
+            while current_id in server_ids:
+                payload=stream[current_curse]['payload']
+                sock.send(payload)
+                print('send %d'%current_id)
+                send_ids.add(current_id)
+                current_curse = current_curse + 1
+                current_id += 1
+                action = True
+            if action==False:
+                break
+                #已经没有任何动作了
+    except:
+        pass
+    finally:
+        sock.socket.shutdown(2)
+        sock.socket.close()

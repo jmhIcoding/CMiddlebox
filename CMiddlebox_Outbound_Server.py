@@ -8,20 +8,32 @@ from config import  config
 import  flask
 from  flask import  Flask
 from dbtool import MongoDBase
+import  Replay
+import  random
+import  threading
+from CMiddlebox_Inbound_Server import Replay_Server
 app=Flask(__name__)
-mongodb = MongoDBase(ip=config['mongodb_ip'])
-@app.route(rule=config['outbound_url'],methods=['POST'])
-def outbound_checker():
-    inputJson = flask.request.json
-    response = {'result':True}
-    filter=mongodb.get(cond=inputJson)
-    if filter==None:
-        response['result']=False
+#mongodb = MongoDBase(ip=config['mongodb_ip'])
+
+replay_server =Replay_Server(config['pcapname'],config['pcapname_client_ip'])
+
+global_inbound_process=[]
+@app.route(rule=config['outbound_create_new_channel'],methods=['GET'])
+def outbound_create_nchannel():
+    port = 0
+    while True:
+        port = random.randint(11000,65530)
+        if Replay.is_port_used("0.0.0.0",port,replay_server.proto)==False:
+            print(port,replay_server.proto)
+            break
+    response={'port':port}
+    for each in global_inbound_process:
+        each._stop()
+    global_inbound_process.clear()
+    th = threading.Thread(target=Replay.replay_server,args=(replay_server.stream,"0.0.0.0",port,))
+    th.start()
+    global_inbound_process.append(th)
+    print(response)
     return flask.jsonify(response)
-@app.route(rule=config['outbound_next_packet_url'],methods=['POST'])
-def outbound_next_packet():
-    inputJson = flask.request.json
-    packet_id = inputJson['packet_id']
-    return flask.jsonify({'msg':'error'})
 app.run(host='0.0.0.0',port=config['outbound_port'])
 

@@ -30,56 +30,55 @@ class Replay_Client(ReplayDator):
         else:
             self.replay_server_ip = replay_server_ip
 
-        if replay_server_start_port == None:
-        #重放的起始端口
-            self.replay_server_start_port = self.stream['c2s'][0]['dst_port']
-        else:
-            self.replay_server_start_port = replay_server_start_port
-        self.go_through_semapher = Semaphore(value=1)
+        self.proto = self.stream['c2s'][0]['proto']
 
         #寻到的关键词
         self.keyword=set()  #{{"start":,"len":,"packet_id":,"content":,}}
-        self.keyword_db = MongoDBase(ip=config['mongodb_ip'],tablename='keyword')
+        #self.keyword_db = MongoDBase(ip=config['mongodb_ip'],tablename='keyword')
     def requry_remote_port(self):
-        rst = self.replay_server_start_port
-
+        rst = 0
+        url = "http://%s:%s%s"%(config['outbound_ip'],config['outbound_port'],config['outbound_create_new_channel'])
+        response = requests.get(url).json()
+        rst = response['port']
         return rst
     def replay(self,replay_port=None):
-        while self.current_single_curse_packet_id < len(self.stream['c2s']):
+        packet_id = 0
+        while packet_id < len(self.stream['c2s']):
             remote_port=self.requry_remote_port()
-            if replay_client(self.stream,self.replay_server_ip,remote_port,)==True:
+            if replay_client(self.stream,self.replay_server_ip,remote_port,self.proto)==True:
                 #原始数据包就可以直接通过,那么处理下一个client端的数据包
-                self.current_single_curse_packet_id +=1
+                packet_id +=1
             else:
                 #原始数据包被拦截
-                keyword_start,keyword_len = self.search_keyword(0,len(payload),payload,packet_id)
+                keyword_start,keyword_len = self.search_keyword(0,len(self.stream['c2s'][packet_id]['payload']),packet_id)
                 for i in range(len(keyword_start)):
-                    keyword={"start":keyword_start[i],"len":keyword_len[i],"packet_id":packet_id,"content":payload[keyword_start:(keyword_start+keyword_len)]}
+                    keyword={"start":keyword_start[i],"len":keyword_len[i],"packet_id":packet_id,"content":self.stream['c2s'][packet_id][keyword_start:(keyword_start+keyword_len)]}
                     self.keyword.add(keyword)
-                    self.keyword_db.insert(keyword)
-            self.current_single_curse_packet_id += 1
-        self.sock.close()
-        #self.thread.join()
-    def search_keyword(self,l,r,payload,packet_id):
+                    print(keyword)
+                    #self.keyword_db.insert(keyword)
+    def search_keyword(self,l,r,packet_id):
+        payload = self.stream['c2s'][packet_id]['payload']
         if l==r:
             return l,0
         if l<r :
             mid = (l+r)/2
             payload_left_modified = randomize(payload,l,mid)
-            self.sock.send(payload_left_modified)
-            hash_value_left = hash_int(payload_modified)
             payload_right_modified=randomize(payload,mid+1,r)
-            self.sock.send(payload_right_modified)
-            hash_value_right = hash_int(payload_right_modified)
+
             #Divide into 2 sepearate branches
-            if self.server_checker(packet_id,hash_value_left) == False:
+            self.stream['c2s'][packet_id]['payload']=payload_left_modified
+            remote_port = self.requry_remote_port()
+            if replay_client(self.stream,self.replay_server_ip,remote_port,self.proto) == False:
                 #Never go through middle box,means payload left contains keyword
-                lkeyword_start,lkeyword_len_=self.search_keyword(l,mid,payload,packet_id)
+                lkeyword_start,lkeyword_len_=self.search_keyword(l,mid,packet_id)
             else:
                 lkeyword_start,lkeyword_len=[l],[0]
-            if self.search_keyword(packet_id,hash_value_right)==False:
+
+            self.stream['c2s'][packet_id]['payload']=payload_right_modified
+            remote_port = self.requry_remote_port()
+            if replay_client(self.stream,self.replay_server_ip,remote_port,self.proto)==False:
                 #Means payload right contains keyword
-                rkeyword_start,rkeyword_len =self.search_keyword(mid+1,r,payload,packet_id)
+                rkeyword_start,rkeyword_len =self.search_keyword(mid+1,r,packet_id)
             else:
                 rkeyword_start,rkeyword_len=[mid+1],[0]
             #Merge 2 seperate branches
@@ -107,28 +106,6 @@ class Replay_Client(ReplayDator):
             for i in range(0,len(keyword_start)):
                 keyword_end[i]=keyword_end[i]-keyword_start[i]
             return keyword_start,keyword_end
-    def server_checker(self,packet_id,hash_value):
-        #到达返回true
-        request_url = 'http://%s:%s%s'%(config['outbound_ip'],config['outbound_port'],config['outbound_url'])
-        jdata ={'packet_id':packet_id,'hash_value':hash_value}
-        response = requests.post(request_url,json=jdata)
-        return response.json()['result']
-    def sender_thread(self):
-        pass
-    def recv_thread(self):
-        while True:
-                #data = self.sock.recv(min(1460,len(self.stream['s2c'][self.request_packet_id]['payload'])))
-                data = self.sock.recv(len(self.stream['payload'][self.request_packet_id]))
-                if data:
-                    #收到了重放的响应数据包
-                    hash_value = hash_int(data)
-                    packet_id = self.server_payload_hash_to_id.get(hash_value,0)
-                    if packet_id > 0:
-                        self.recv_set.add(packet_id)
-                        print('client recv: {id:%d,hash:%d}'%(packet_id,hash_value))
-                else:
-                    self.sock.close()
-                    break
 if __name__ == '__main__':
-    client =Replay_Client(pcap_name='Youtube_no_retransmits.pcap',pcap_client_ip="172.20.161.222",replay_server_ip=config['outbound_ip'])
+    client =Replay_Client(pcap_name=config['pcapname'],pcap_client_ip=config['pcapname_client_ip'],replay_server_ip=config['outbound_ip'])
     client.replay()
