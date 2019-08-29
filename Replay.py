@@ -77,17 +77,18 @@ def replay_client(_stream,remote_ip,remote_port,proto,thres=5):
                 current_curse =current_curse +1
                 current_id += 1
 
-                action = True
                 if current_id >thres:
                     break
+                action=True
             while current_id not in client_ids:
                 data = sock.recv(len(_stream['payload'][current_id]))
                 print('recv %d'%current_id)
                 recv_ids.add(current_id)
                 current_id += 1
-                action = True
+
                 if current_id > thres:
                     break
+                action=True
             if action==False:
                 break
     except:
@@ -135,9 +136,10 @@ def replay_server(_stream,local_ip="0.0.0.0",local_port=0,thres=5):
                 print('recv %d'%current_id)
                 recv_ids.add(current_id)
                 current_id += 1
-                action=True
+
                 if current_id >5 :
                     break
+                action=True
             while current_id in server_ids:
                 payload=stream[current_curse]['payload']
                 sock.send(payload)
@@ -145,10 +147,10 @@ def replay_server(_stream,local_ip="0.0.0.0",local_port=0,thres=5):
                 send_ids.add(current_id)
                 current_curse = current_curse + 1
                 current_id += 1
-
-                action = True
                 if current_id >5 :
                     break
+                action = True
+
             if action==False:
                 break
                 #已经没有任何动作了
