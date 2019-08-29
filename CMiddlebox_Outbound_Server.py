@@ -18,5 +18,10 @@ def outbound_checker():
     if filter==None:
         response['result']=False
     return flask.jsonify(response)
+@app.route(rule=config['outbound_next_packet_url'],methods=['POST'])
+def outbound_next_packet():
+    inputJson = flask.request.json
+    packet_id = inputJson['packet_id']
+    return flask.jsonify({'msg':'error'})
 app.run(host='0.0.0.0',port=config['outbound_port'])
 

@@ -13,9 +13,9 @@ import  requests
 import time
 from  threading import  Thread
 class Replay_Client(Replay):
-    def __init__(self,pcap_name,pcap_client_ip,replay_server_ip,replay_server_start_port=None):
+    def __init__(self,pcap_name,pcap_client_ip,replay_server_ip,replay_server_start_port=None,inbound_port=None):
         super(Replay_Client,self).__init__(pcap_name,pcap_client_ip)
-        self.replay_server_ip = replay_server_ip    #把数据包重放到这个ip主机上
+        self.replay_server_ip = config['outbound_ip']    #把数据包重放到这个ip主机上
         if replay_server_start_port ==None:
             #起始端口
             self.replay_server_start_port = self.stream['c2s'][0]['dst_port']
@@ -25,7 +25,9 @@ class Replay_Client(Replay):
         self.keyword=set()#{{"start":,"len":,"packet_id":,"content":,}}
         self.keyword_db = MongoDBase(ip=config['mongodb_ip'],tablename='keyword')
         self.recv_set=set()
-
+        self.inbound_sock = SOCKET('UDP','client',ip=config['outbound_ip'],port=config['inbound_port'])
+    def request_new_reply(self,packet_id):
+        self.inbound_sock.send(packet_id)
     def replay(self,replay_port=None):
         if replay_port==None:
             port = self.replay_server_start_port
@@ -43,7 +45,7 @@ class Replay_Client(Replay):
             if self.server_checker(packet_id,hash_value)==True:
                 #原始数据包就可以直接通过,那么处理下一个client端的数据包
                 while (packet_id +1) in self.server_packets_id and (packet_id +1) not in self.recv_set:
-                    time.sleep(0.05)
+                    self.request_new_reply(packet_id+1)
                     print('wait for next packet from server...')
 
             else:
