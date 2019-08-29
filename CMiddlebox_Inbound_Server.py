@@ -43,6 +43,7 @@ class Replay_Server(Replay):
     def send_thread(self):
         while True:
                 packet_id,_ = self.inbound_sock.recv(32)
+                packet_id = struct.unpack("i!")
                 payload = self.stream['payload'][packet_id]
                 self.sock.send(payload)
                 print('send {packet_id:%d,hash:%d}'%(self.current_packet_id,hash_int(payload)))

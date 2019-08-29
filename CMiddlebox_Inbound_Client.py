@@ -11,6 +11,7 @@ from dbtool import MongoDBase
 from config import config
 import  requests
 import time
+import  struct
 from  threading import  Thread
 class Replay_Client(Replay):
     def __init__(self,pcap_name,pcap_client_ip,replay_server_ip,replay_server_start_port=None,inbound_port=None):
@@ -27,7 +28,8 @@ class Replay_Client(Replay):
         self.recv_set=set()
         self.inbound_sock = SOCKET('UDP','client',ip=config['outbound_ip'],port=config['inbound_port'])
     def request_new_reply(self,packet_id):
-        self.inbound_sock.send(packet_id)
+        payload = struct.pack(fmt='i!',packet_id)
+        self.inbound_sock.send(payload)
     def replay(self,replay_port=None):
         if replay_port==None:
             port = self.replay_server_start_port
