@@ -28,7 +28,7 @@ class Replay_Client(Replay):
         self.recv_set=set()
         self.inbound_sock = SOCKET('UDP','client',ip=config['outbound_ip'],port=config['inbound_port'])
     def request_new_reply(self,packet_id):
-        payload = struct.pack(fmt='i!',packet_id)
+        payload = struct.pack('!i',packet_id)
         self.inbound_sock.send(payload)
     def replay(self,replay_port=None):
         if replay_port==None:
