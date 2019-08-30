@@ -89,7 +89,7 @@ class Replay_Client(ReplayDator):
 
             if replay_client(self.stream,self.replay_server_ip,remote_port,self.proto) == True:
                 #go through middle box,means payload left half contains keyword
-                self.stream['c2s'][packet_id]['payload']=payload        #payload_right_modified
+                self.stream['c2s'][packet_id]['payload']=payload_right_modified        #payload_right_modified
                 print('[%d,%d) may contain keyword'%(l,mid))
                 lkeyword_start,lkeyword_len=self.search_keyword(l,mid,packet_id)
             else:
@@ -99,7 +99,7 @@ class Replay_Client(ReplayDator):
             remote_port = self.requry_remote_port()
             if replay_client(self.stream,self.replay_server_ip,remote_port,self.proto)==True:
                 #Means payload right contains keyword
-                self.stream['c2s'][packet_id]['payload']=payload        #payload_left_modified
+                self.stream['c2s'][packet_id]['payload']=payload_left_modified        #payload_left_modified
                 print('[%d,%d) may contain keyword'%(mid,r))
                 rkeyword_start,rkeyword_len =self.search_keyword(mid,r,packet_id)
             else:
