@@ -47,10 +47,12 @@ class SOCKET:
                 self.socket.listen(10)
                 self.socket,self.address=self.socket.accept()
                 self.flag = True
+                self.socket.settimeout(2)
             if role=='client':
                 self.address=(ip,port)
                 self.socket.connect(self.address)
                 self.flag = True
+                self.socket.settimeout(2)
         if proto=='UDP':
             self.socket = socket.socket(type=socket.SOCK_DGRAM)
             if role=='server':
@@ -82,7 +84,7 @@ class SOCKET:
 if __name__ == '__main__':
     stream=extractStream('Youtube_no_retransmits.pcap',client_ip="172.20.161.222")
     print(stream['c2s'][0]['payload'])
-    print(stream['payload'])
+    print(stream['payload'][0:3])
     payload = stream['c2s'][0]['payload']
     payload = randomize(payload,0,2)
-    print(payload)
+    print(payload[0:1])

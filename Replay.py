@@ -82,7 +82,7 @@ def replay_client(_stream,remote_ip,remote_port,proto,thres=5):
                 action=True
             while current_id not in client_ids:
                 data = sock.recv(len(_stream['payload'][current_id]))
-                print('recv %d'%current_id)
+                #print('recv %d'%current_id)
                 recv_ids.add(current_id)
                 current_id += 1
 
@@ -133,7 +133,7 @@ def replay_server(_stream,local_ip="0.0.0.0",local_port=0,thres=5):
             action = False
             while current_id not in server_ids:
                 data = sock.recv(len(_stream['payload'][current_id]))
-                print('recv %d'%current_id)
+                #print('recv %d'%current_id)
                 recv_ids.add(current_id)
                 current_id += 1
 
