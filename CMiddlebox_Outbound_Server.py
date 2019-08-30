@@ -28,7 +28,10 @@ def outbound_create_nchannel():
             break
     response={'port':port}
     for each in global_inbound_process:
-        each._stop()
+        try:
+            each._stop()
+        except:
+            pass
     global_inbound_process.clear()
     th = threading.Thread(target=Replay.replay_server,args=(replay_server.stream,"0.0.0.0",port,))
     th.start()
