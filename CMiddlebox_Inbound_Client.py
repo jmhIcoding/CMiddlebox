@@ -56,7 +56,7 @@ class Replay_Client(ReplayDator):
                 keyword_start,keyword_len = self.search_keyword(0,len(self.stream['c2s'][packet_id]['payload']),packet_id,False)
                 for i in range(len(keyword_start)):
                     payload =randomize(self.stream['c2s'][packet_id]['payload'],0,0)[keyword_start[i]:(keyword_start[i]+keyword_len[i])]
-                    keyword={"start":keyword_start[i],"len":keyword_len[i],"packet_id":packet_id,'ansiic':binary_op.byte2ansic(payload),'hex':payload.hex()}
+                    keyword={"start":keyword_start[i],"len":keyword_len[i],"packet_id":packet_id,'ansiic':binary_op.byte2ansic(payload),'hex':payload}
                     self.keyword.append(keyword)
                     print(keyword)
                     #self.keyword_db.insert(keyword)
