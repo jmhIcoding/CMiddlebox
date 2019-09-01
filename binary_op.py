@@ -27,3 +27,9 @@ def randomize(payload,start,end,method='invert'):
         for i in range(start,end):
             payload[i] = random.randint()%256
     return bytes(payload)
+
+def generate_random_payload(length):
+    if not isinstance(length,int):
+        length  =int
+    payload = bytearray(length)
+    return randomize(payload,0,length,method='rand')

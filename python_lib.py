@@ -9,7 +9,7 @@ def extractStream(pcapfilename,client_ip):
     ####
     packets = rdpcap(pcapfilename)
     count = 1
-    stream={'s2c':[],'c2s':[],'payload':[b'0']}
+    stream={'s2c':{'meta':[],'payload':[]},'c2s':{'meta':[],'payload':[]},'payload':[b'']}
     for data in packets:
         src_ip = data['IP'].src
         dst_ip = data['IP'].dst
@@ -24,14 +24,18 @@ def extractStream(pcapfilename,client_ip):
             payload =  bytes(data['UDP'].payload)
             proto='UDP'
         if len(payload):
-            packet={'proto':proto,'id':count,'src_ip':src_ip,'dst_ip':dst_ip,'src_port':src_port,'dst_port':dst_port,'payload':payload}
+            packet={'proto':proto,'id':count,'src_ip':src_ip,'dst_ip':dst_ip,'src_port':src_port,'dst_port':dst_port}
             count +=1
             if src_ip==client_ip:
                 packet.setdefault('direction','c2s')
-                stream['c2s'].append(packet)
+                stream['c2s']['payload'].append(payload)
+                packet.setdefault('payload_index',len(stream['c2s']['payload']))
+                stream['c2s']['meta'].append(packet)
             elif dst_ip==client_ip:
                 packet.setdefault('direction','s2c')
-                stream['s2c'].append(packet)
+                stream['s2c']['payload'].append(payload)
+                packet.setdefault('payload_index',len(stream['s2c']['payload']))
+                stream['s2c']['meta'].append(packet)
             stream['payload'].append(payload)
     return stream
 

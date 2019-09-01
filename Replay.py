@@ -15,42 +15,10 @@ class ReplayDator():
         self.stream = python_lib.extractStream(pcapname,pcap_client_ip)
         self.client_packets_id=set()    #客户端需要发送的数据包的id号
         self.server_packets_id=set()    #服务端需要发送的数据的id号
-        self.server_payload_hash_to_id={}
-        self.client_payload_hash_to_id={}
-        self.payload_hash_to_id={}
-        for each in self.stream['c2s']:
-            hash_value =hash_int(each['payload'])
-            self.client_payload_hash_to_id[hash_value] = each['id']
-            self.payload_hash_to_id[hash_value]=each['id']
+        for each in self.stream['c2s']['meta']:
             self.client_packets_id.add(each['id'])
-
-        for each in self.stream['s2c']:
-            hash_value = hash_int(each['payload'])
-            self.server_payload_hash_to_id[hash_value]=each['id']
-            self.payload_hash_to_id[hash_value]=each['id']
+        for each in self.stream['s2c']['meta']:
             self.server_packets_id.add(each['id'])
-class Replay:
-    def __init__(self,pcapname,pcap_client_ip):
-        #pcap_client_ip 是抓取的原始pcap里面,主动向外发起请求的ip 地址,这个一般就是客户端IP
-        #重放的数据流
-        self.stream = python_lib.extractStream(pcapname,pcap_client_ip)
-        self.client_packets_id=set()    #客户端需要发送的数据包的id号
-        self.server_packets_id=set()    #服务端需要发送的数据的id号
-        self.server_payload_hash_to_id={}
-        self.client_payload_hash_to_id={}
-        self.payload_hash_to_id={}
-        for each in self.stream['c2s']:
-            hash_value =hash_int(each['payload'])
-            self.client_payload_hash_to_id[hash_value] = each['id']
-            self.payload_hash_to_id[hash_value]=each['id']
-            self.client_packets_id.add(each['id'])
-
-        for each in self.stream['s2c']:
-            hash_value = hash_int(each['payload'])
-            self.server_payload_hash_to_id[hash_value]=each['id']
-            self.payload_hash_to_id[hash_value]=each['id']
-            self.server_packets_id.add(each['id'])
-
 def replay_client(_stream,remote_ip,remote_port,proto,thres=5):
     ############
     ######
@@ -61,7 +29,7 @@ def replay_client(_stream,remote_ip,remote_port,proto,thres=5):
     rst = False
     client_ids = {1}
     stream = _stream['c2s']
-    for each in stream:
+    for each in stream['meta']:
         client_ids.add(each['id'])
     current_id = 1
     current_curse = 0
@@ -72,7 +40,7 @@ def replay_client(_stream,remote_ip,remote_port,proto,thres=5):
         while True:
             action = False
             while current_id in client_ids:
-                payload = stream[current_curse]['payload']
+                payload = stream['payload'][current_curse]
                 sock.send(payload)
                 send_ids.add(current_id)
                 current_curse =current_curse +1
@@ -120,9 +88,9 @@ def is_port_used(ip,port,proto):
         s.close()
 def replay_server(_stream,local_ip="0.0.0.0",local_port=0,thres=5):
     stream = _stream['s2c']
-    proto = stream[0]['proto']
+    proto = stream['meta'][0]['proto']
     server_ids = set()
-    for each in stream:
+    for each in stream['meta']:
         server_ids.add(each['id'])
     current_id = 1
     current_curse = 0
@@ -142,7 +110,7 @@ def replay_server(_stream,local_ip="0.0.0.0",local_port=0,thres=5):
                     break
                 action=True
             while current_id in server_ids:
-                payload=stream[current_curse]['payload']
+                payload=stream['payload'][current_curse]
                 sock.send(payload)
                 print('send %d'%current_id)
                 send_ids.add(current_id)

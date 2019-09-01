@@ -10,10 +10,10 @@ from  python_lib import  randomize
 from config import  config
 def main(pcapname,packet_id,offset,length):
      client =Replay_Client(pcapname,pcap_client_ip=config['pcapname_client_ip'],replay_server_ip=config['outbound_ip'])
-     payload = client.stream['c2s'][packet_id]
-     payload_modified = randomize(payload,offset,offset+end)
-     client.stream['c2s'][packet_id]=payload
-     remote_port = client.request_remote()
+     payload = client.stream['c2s'][packet_id]['payload']
+     payload_modified = randomize(payload,offset,offset+length)
+     client.stream['c2s'][packet_id]['payload']=payload_modified
+     remote_port = client.requry_remote_port()
      ###Now replay!
      if replay_client(client.stream,client.replay_server_ip,remote_port,client.proto)==True:
          print('pass!!!!')
@@ -22,6 +22,6 @@ def main(pcapname,packet_id,offset,length):
 if __name__ == '__main__':
     pcap_name=config['pcapname']
     packet_id = 0
-    offset = 0
-    length = 2
-    main(pacp_name,packet_id,offset,length)
+    offset = 1
+    length = 1
+    main(pcap_name,packet_id,offset,length)
