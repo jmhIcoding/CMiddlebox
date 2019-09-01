@@ -4,16 +4,14 @@ __author__ = 'dk'
 '''
 from  Replay import  ReplayDator
 from  Replay import  replay_client
+from Replay import  requry_remote_port
 from python_lib import  SOCKET,randomize
 from hash import  hash_int
 from  threading import  Semaphore
 import  copy
 from dbtool import MongoDBase
 from config import config
-import  requests
-import time
-import  struct
-from  threading import  Thread
+
 class Replay_Client(ReplayDator):
     def __init__(self,pcap_name,pcap_client_ip,replay_server_ip=None,replay_server_start_port=None,inbound_port=None):
         '''
@@ -35,16 +33,12 @@ class Replay_Client(ReplayDator):
         #寻到的关键词
         self.keyword=set()  #{{"start":,"len":,"packet_id":,"content":,}}
         #self.keyword_db = MongoDBase(ip=config['mongodb_ip'],tablename='keyword')
-    def requry_remote_port(self):
-        rst = 0
-        url = "http://%s:%s%s"%(config['outbound_ip'],config['outbound_port'],config['outbound_create_new_channel'])
-        response = requests.get(url).json()
-        rst = response['port']
-        return rst
+    def request_remote(self):
+        return requry_remote_port(config['outbound_ip'],config['outbound_port'],config['outbound_create_new_channel'])
     def replay(self,replay_port=None):
         packet_id = 0
         while packet_id < len(self.stream['c2s']):
-            remote_port=self.requry_remote_port()
+            remote_port= self.replay_server_ip()
             if replay_client(self.stream,self.replay_server_ip,remote_port,self.proto)==True:
                 #原始数据包就可以直接通过,那么处理下一个client端的数据包
                 packet_id +=1
@@ -71,6 +65,7 @@ class Replay_Client(ReplayDator):
             if replay_client(self.stream,self.replay_server_ip,remote_port,self.proto) == True:
                 #Never go through middle box,means payload left contains keyword
                 self.stream['c2s'][packet_id]['payload']=payload
+                print('packet%d[%d,%d) contains key word'%(packet_id,l,mid))
                 lkeyword_start,lkeyword_len_=self.search_keyword(l,mid,packet_id)
             else:
                 lkeyword_start,lkeyword_len=[l],[0]
@@ -80,6 +75,7 @@ class Replay_Client(ReplayDator):
             if replay_client(self.stream,self.replay_server_ip,remote_port,self.proto)==True:
                 #Means payload right contains keyword
                 self.stream['c2s'][packet_id]['payload']=payload
+                print('packet%d[%d,%d) contains key word'%(packet_id,mid+1,r))
                 rkeyword_start,rkeyword_len =self.search_keyword(mid+1,r,packet_id)
             else:
                 rkeyword_start,rkeyword_len=[mid+1],[0]

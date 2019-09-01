@@ -2,6 +2,7 @@ __author__ = 'dk'
 from hash import  hash_int
 import python_lib
 import  socket
+import  requests
 class ReplayDator():
     #################################
     ###########
@@ -158,4 +159,11 @@ def replay_server(_stream,local_ip="0.0.0.0",local_port=0,thres=5):
         sock.socket.close()
     except:
         pass
+
+def requry_remote_port(ip,port,url):
+    rst = 0
+    url = "http://%s:%s%s"%(ip,port,url)
+    response = requests.get(url).json()
+    rst = response['port']
+    return rst
 
