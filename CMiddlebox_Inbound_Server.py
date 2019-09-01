@@ -17,7 +17,7 @@ from  threading import  Thread
 class Replay_Server(ReplayDator):
     def __init__(self,pcap_name,pcap_client_ip):
         super(Replay_Server,self).__init__(pcap_name,pcap_client_ip)
-        self.proto = self.stream['s2c'][0]['proto']
+        self.proto = self.stream['s2c']['meta'][0]['proto']
 
 if __name__ == '__main__':
     server = Replay_Server(pcap_name='Youtube_no_retransmits.pcap',pcap_client_ip="172.20.161.222")
