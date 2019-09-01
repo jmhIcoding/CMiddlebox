@@ -11,7 +11,6 @@ from  threading import  Semaphore
 import  copy
 from dbtool import MongoDBase
 from config import config
-
 class Replay_Client(ReplayDator):
     def __init__(self,pcap_name,pcap_client_ip,replay_server_ip=None,replay_server_start_port=None,inbound_port=None):
         '''
@@ -31,7 +30,7 @@ class Replay_Client(ReplayDator):
         self.proto = self.stream['c2s'][0]['proto']
 
         #寻到的关键词
-        self.keyword=set()  #{{"start":,"len":,"packet_id":,"content":,}}
+        self.keyword=[]  #{{"start":,"len":,"packet_id":,"content":,}}
         #self.keyword_db = MongoDBase(ip=config['mongodb_ip'],tablename='keyword')
     def request_remote(self):
         return requry_remote_port(config['outbound_ip'],config['outbound_port'],config['outbound_create_new_channel'])
@@ -44,29 +43,47 @@ class Replay_Client(ReplayDator):
                 packet_id +=1
             else:
                 #原始数据包被拦截
-                keyword_start,keyword_len = self.search_keyword(0,len(self.stream['c2s'][packet_id]['payload']),packet_id)
+                print('[%d,%d) may contain keyword'%(0,len(self.stream['c2s'][packet_id]['payload'])))
+                payload=self.stream['c2s'][packet_id]['payload']
+                keyword_start,keyword_len = self.search_keyword(0,len(self.stream['c2s'][packet_id]['payload']),packet_id,False)
                 for i in range(len(keyword_start)):
-                    keyword={"start":keyword_start[i],"len":keyword_len[i],"packet_id":packet_id,"content":self.stream['c2s'][packet_id][keyword_start:(keyword_start+keyword_len)]}
-                    self.keyword.add(keyword)
+                    payload =randomize(self.stream['c2s'][packet_id]['payload'],0,0)[keyword_start[i]:(keyword_start[i]+keyword_len[i])]
+                    keyword={"start":keyword_start[i],"len":keyword_len[i],"packet_id":packet_id,'ansiic':binary_op.byte2ansic(payload),'hex':payload}
+                    self.keyword.append(keyword)
                     print(keyword)
                     #self.keyword_db.insert(keyword)
-    def search_keyword(self,l,r,packet_id):
+
+                self.stream['c2s'][packet_id]['payload']=payload
+                packet_id +=1
+
+    def search_keyword(self,l,r,packet_id,flags=True):
         payload = self.stream['c2s'][packet_id]['payload']
+        if l+1 == r :
+            return [l],[1]
         if l>=r:
-            return l,0
+            return [l],[0]
         if l<r :
             mid = int((l+r)/2)
-            payload_left_modified = randomize(payload,l,mid)
-            payload_right_modified=randomize(payload,mid+1,r)
+            payload_left_modified = randomize(payload,l,mid)###修改不包含mid,是左闭右开区间[l,mid)
+            payload_right_modified= randomize(payload,mid,r)###修改不包含r,是左闭右开区间[mid,r)
+            sssl=[]
+            sssr=[]
+
+            #for i in range(len(payload)):
+            #    sssl.append(payload[i] ^ payload_left_modified[i])
+            #    sssr.append(payload[i] ^ payload_right_modified[i])
+            #print(sssl)
+            #print(sssr)
 
             #Divide into 2 sepearate branches
             self.stream['c2s'][packet_id]['payload']=payload_left_modified
             remote_port = self.requry_remote_port()
+
             if replay_client(self.stream,self.replay_server_ip,remote_port,self.proto) == True:
-                #Never go through middle box,means payload left contains keyword
-                self.stream['c2s'][packet_id]['payload']=payload
-                print('packet%d[%d,%d) contains key word'%(packet_id,l,mid))
-                lkeyword_start,lkeyword_len_=self.search_keyword(l,mid,packet_id)
+                #go through middle box,means payload left half contains keyword
+                self.stream['c2s'][packet_id]['payload']=payload        #payload_right_modified
+                print('[%d,%d) may contain keyword'%(l,mid))
+                lkeyword_start,lkeyword_len=self.search_keyword(l,mid,packet_id)
             else:
                 lkeyword_start,lkeyword_len=[l],[0]
 
@@ -74,9 +91,9 @@ class Replay_Client(ReplayDator):
             remote_port = self.requry_remote_port()
             if replay_client(self.stream,self.replay_server_ip,remote_port,self.proto)==True:
                 #Means payload right contains keyword
-                self.stream['c2s'][packet_id]['payload']=payload
-                print('packet%d[%d,%d) contains key word'%(packet_id,mid+1,r))
-                rkeyword_start,rkeyword_len =self.search_keyword(mid+1,r,packet_id)
+                self.stream['c2s'][packet_id]['payload']=payload        #payload_left_modified
+                print('[%d,%d) may contain keyword'%(mid,r))
+                rkeyword_start,rkeyword_len =self.search_keyword(mid,r,packet_id)
             else:
                 rkeyword_start,rkeyword_len=[mid+1],[0]
             #Merge 2 seperate branches
