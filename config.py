@@ -5,7 +5,7 @@ config = {
         'inbound_port':9901,
         'outbound_port':9900,
         'outbound_create_new_channel':"/api/cmiddle/newchannel",
-        'outbound_ip':'10.0.2.1',
+        'outbound_ip':'47.254.71.134',
         'outbound_url':'/api/cmiddle/outbound',
         'outbound_next_packet_url':'/api/cmiddle/npacket',
         'mongodb_ip':'172.16.30.180',
