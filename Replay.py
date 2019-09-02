@@ -3,6 +3,8 @@ from hash import  hash_int
 import python_lib
 import  socket
 import  requests
+import  copy
+from  binary_op import  generate_random_payload
 class ReplayDator():
     #################################
     ###########
@@ -40,7 +42,7 @@ def replay_client(_stream,remote_ip,remote_port,proto,thres=5):
         while True:
             action = False
             while current_id in client_ids:
-                payload = stream['payload'][current_curse]
+                payload = _stream['c2s']['payload'][current_curse]
                 sock.send(payload)
                 send_ids.add(current_id)
                 current_curse =current_curse +1
@@ -135,3 +137,35 @@ def requry_remote_port(ip,port,url):
     rst = response['port']
     return rst
 
+def insert_packet(_stream,packet_id,packet_number=1,direction='c2s'):
+    ############
+    ####
+    ####
+    #在流stream的第packet_id前面插入 packet_number个随机的数据包
+    #检测 策略是否和包在流的位置有关系
+    ############
+
+    stream=copy.deepcopy(_stream)
+    for i in range(packet_number):
+        packet_meta = _stream[direction]['meta'][packet_id]
+        payload = generate_random_payload(packet_meta['payload_len'])
+        packet_meta['payload_index'] = len(stream[direction]['payload'])
+        stream[direction]['payload'].append(payload)
+        stream[direction]['meta'].insert(packet_id,copy.deepcopy(packet_meta))
+
+    return stream
+
+def insert_payload(_stream,packet_id,offset,inserted_length,direction='c2s'):
+    ##############
+    ######
+    ######
+    #在stream流的指定数据包的指定位置的前面,插入随机的片段.
+    #检测 策略是否与keyword在包的位置有关。
+    ##############
+    stream=copy.deepcopy(_stream)
+    payload = generate_random_payload(inserted_length)
+    payload_index = _stream[direction]['meta'][packet_id]['payload_index']
+    stream[direction]['meta'][packet_id]['payload_len'] += inserted_length
+    p=bytearray(stream[direction]['payload'][payload_index])
+    stream[direction]['payload'][packet_id]=p[:offset]+payload+p[offset]
+    return stream

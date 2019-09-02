@@ -1,6 +1,7 @@
 __author__ = 'dk'
 #二进制操作库
 import  struct
+import  random
 def byte2ansic(payload):
     s=[]
     if isinstance(payload,bytes):
@@ -25,7 +26,7 @@ def randomize(payload,start,end,method='invert'):
             payload[i] = ~payload[i] % 256
     if method =='rand':
         for i in range(start,end):
-            payload[i] = random.randint()%256
+            payload[i] = random.randint(0,255)
     return bytes(payload)
 
 def generate_random_payload(length):

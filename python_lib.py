@@ -24,17 +24,17 @@ def extractStream(pcapfilename,client_ip):
             payload =  bytes(data['UDP'].payload)
             proto='UDP'
         if len(payload):
-            packet={'proto':proto,'id':count,'src_ip':src_ip,'dst_ip':dst_ip,'src_port':src_port,'dst_port':dst_port}
+            packet={'proto':proto,'id':count,'src_ip':src_ip,'dst_ip':dst_ip,'src_port':src_port,'dst_port':dst_port,'payload_len':len(payload)}
             count +=1
             if src_ip==client_ip:
                 packet.setdefault('direction','c2s')
-                stream['c2s']['payload'].append(payload)
                 packet.setdefault('payload_index',len(stream['c2s']['payload']))
+                stream['c2s']['payload'].append(payload)
                 stream['c2s']['meta'].append(packet)
             elif dst_ip==client_ip:
                 packet.setdefault('direction','s2c')
-                stream['s2c']['payload'].append(payload)
                 packet.setdefault('payload_index',len(stream['s2c']['payload']))
+                stream['s2c']['payload'].append(payload)
                 stream['s2c']['meta'].append(packet)
             stream['payload'].append(payload)
     return stream
@@ -87,8 +87,4 @@ class SOCKET:
             self.flag = True
 if __name__ == '__main__':
     stream=extractStream('Youtube_no_retransmits.pcap',client_ip="172.20.161.222")
-    print(stream['c2s'][0]['payload'])
-    print(stream['payload'][0:3])
-    payload = stream['c2s'][0]['payload']
-    payload = randomize(payload,0,2)
-    print(payload[0:1])
+    print(stream['c2s']['payload'][0][0:3])

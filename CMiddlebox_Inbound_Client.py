@@ -39,22 +39,22 @@ class Replay_Client(ReplayDator):
                 packet_id +=1
             else:
                 #原始数据包被拦截
-                packet_index = self.stream['c2s']['meta'][packet_id]['payload_index']
-                print('[%d,%d) may contain keyword'%(0,len(self.stream['c2s']['payload'][packet_index])))
-                payload=self.stream['c2s']['payload'][packet_index]
-                keyword_start,keyword_len = self.search_keyword(0,len(self.stream['c2s']['payload'][packet_index]),packet_id,False)
+                payload_index = self.stream['c2s']['meta'][packet_id]['payload_index']
+                print('[%d,%d) may contain keyword'%(0,len(self.stream['c2s']['payload'][payload_index])))
+                payload=self.stream['c2s']['payload'][payload_index]
+                keyword_start,keyword_len = self.search_keyword(0,len(self.stream['c2s']['payload'][payload_index]),packet_id,False)
                 for i in range(len(keyword_start)):
-                    payload =randomize(self.stream['c2s']['payload'][packet_index],0,0)[keyword_start[i]:(keyword_start[i]+keyword_len[i])]
+                    payload =self.stream['c2s']['payload'][payload_index][keyword_start[i]:(keyword_start[i]+keyword_len[i])]
                     keyword={"start":keyword_start[i],"len":keyword_len[i],"packet_id":packet_id,'ansiic':binary_op.byte2ansic(payload),'hex':payload}
                     self.keyword.append(keyword)
                     print(keyword)
                     #self.keyword_db.insert(keyword)
 
-                self.stream['c2s'][packet_id]['payload']=payload
+                self.stream['c2s']['payload'][payload_index]=payload
                 packet_id +=1
 
     def search_keyword(self,l,r,packet_id,flags=True):
-        payload_index = self.stream['c2s']['meta'][packet_id]['payload_inex']
+        payload_index = self.stream['c2s']['meta'][packet_id]['payload_index']
         payload = self.stream['c2s']['payload'][payload_index]
         if l+1 == r :
             return [l],[1]
@@ -119,22 +119,6 @@ class Replay_Client(ReplayDator):
             for i in range(0,len(keyword_start)):
                 keyword_end[i]=keyword_end[i]-keyword_start[i]
             return keyword_start,keyword_end
-    def insert_packet(self,packet_id,packet_number=1):
-        ############
-        ####
-        ####
-        #在流的第packet_id后面插入 packet_number个随机的数据包
-        #检测 策略是否和包在流的位置有关系
-        ############
-        pass
-    def insert_payload(self,packet_id,offset,inserted_length):
-        ##############
-        ######
-        ######
-        #在流的指定数据包的指定位置,插入随机的片段.
-        #检测 策略是否与keyword在包的位置有关。
-        ##############
-        pass
 if __name__ == '__main__':
     client =Replay_Client(pcap_name=config['pcapname'],pcap_client_ip=config['pcapname_client_ip'],replay_server_ip=config['outbound_ip'])
     client.replay()
