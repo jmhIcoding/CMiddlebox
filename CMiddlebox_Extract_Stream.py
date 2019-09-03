@@ -3,20 +3,23 @@ import  sys
 import  os
 import  subprocess
 import argparse
+import shutil
 def extract_stream(pcap_file,pcap_folder,client_ip,proto):
     #首先提取获取流的id
     stream_number = set()
-    command = 'tshark -2 -r {0} -T fields -e {1}.stream "ip.address=={2}"| sort -n'.format(pcap_file,proto,client_ip)
+    command = 'tshark -2 -r {0} -T fields -e {1}.stream "ip.addr=={2}"| sort -n'.format(pcap_file,proto,client_ip)
+    print(command)
     proc =os.popen(command)
     result = proc.readlines()
-    proc.close()
     for each in result:
-        stream_number.add(int(each))
+        each = each.strip()
+        if each.isdecimal():
+           stream_number.add(int(each))
     #对于每一条流,保存它的pcap
     for each in stream_number:
         command = 'tshark -2 -r {0} -R {1}.stream=={2} -w {3}'.format(pcap_file,proto,each,pcap_folder+"//"+proto+"_stream"+str(each)+".pcap")
         proc = os.popen(command).readlines()
-        proc.close()
+        #proc.close()
 
 def main(pcap_file,pcap_folder,client_ip):
     extract_stream(pcap_file,pcap_folder,client_ip,'tcp')
@@ -24,13 +27,13 @@ def main(pcap_file,pcap_folder,client_ip):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Extract tcp/udp stream from pcap file.')
-    parser.add_argument('--pcap_file',type=str,help='The raw pacp filename.')
-    parser.add_argument('--pcap_folder',type=str,help='The destination folder to store the stream,default is the name of pcap file',default="")
-    parser.add_argument('--client_ip',type=str,help='The ip address of this stream,which is concerned')
+    parser.add_argument('--pcap_file',type=str,help='The raw pacp filename.',required=True)
+    parser.add_argument('--pcap_folder',type=str,required=False,help='The destination folder to store the stream,default is the name of pcap file',default="")
+    parser.add_argument('--client_ip',type=str,required=True,help='The ip address of this stream,which is concerned')
     args = parser.parse_args()
     if args.pcap_folder=="":
-        args.pcap_folder =".//"+args.pcap_file
+        args.pcap_folder =".//"+args.pcap_file.split(".pcap")[0]
     if os.path.exists(args.pcap_folder):
-        os.rmdir(args.pcap_folder)
+        shutil.rmtree(args.pcap_folder,ignore_errors=True)
     os.mkdir(args.pcap_folder)
     main(args.pcap_file,args.pcap_folder,args.client_ip)
