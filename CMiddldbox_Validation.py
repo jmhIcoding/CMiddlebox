@@ -12,6 +12,11 @@ from config import  config
 import  copy
 def main(pcapname,packet_id,offset,length):
      client =Replay_Client(pcapname,pcap_client_ip=config['pcapname_client_ip'],replay_server_ip=config['outbound_ip'])
+     if replay_client(client.stream,client.replay_server_ip,client.requry_remote_port(),client.proto)==True:
+         print('original pass!!!!')
+     else:
+         print('original block!!!')
+
      stream = copy.deepcopy(client.stream)
      payload_index = stream['c2s']['meta'][packet_id]['payload_index']
      payload = stream['c2s']['payload'][payload_index]
@@ -27,6 +32,6 @@ def main(pcapname,packet_id,offset,length):
 if __name__ == '__main__':
     pcap_name=config['pcapname']
     packet_id = 0
-    offset = 0
-    length = 2
+    offset =2 
+    length = 4
     main(pcap_name,packet_id,offset,length)
