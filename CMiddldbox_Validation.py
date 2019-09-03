@@ -32,6 +32,6 @@ def main(pcapname,packet_id,offset,length):
 if __name__ == '__main__':
     pcap_name=config['pcapname']
     packet_id = 0
-    offset =2 
+    offset =0 
     length = 4
     main(pcap_name,packet_id,offset,length)
