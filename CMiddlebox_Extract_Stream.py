@@ -1,7 +1,5 @@
 __author__ = 'dk'
-import  sys
 import  os
-import  subprocess
 import argparse
 import shutil
 def extract_stream(pcap_file,pcap_folder,client_ip,proto):
@@ -22,9 +20,14 @@ def extract_stream(pcap_file,pcap_folder,client_ip,proto):
         #proc.close()
 
 def main(pcap_file,pcap_folder,client_ip):
-    extract_stream(pcap_file,pcap_folder,client_ip,'tcp')
-    extract_stream(pcap_file,pcap_file,client_ip,'udp')
-
+    no_Retrans_pcap_file = pcap_file.split(".pcap")[0]+"noRet.pcap"
+    command='tshark -2 -R "not tcp.analysis.restransmission && not tcp.analysis.out_of_order" -r {0} -w {1}'.format(pcap_file,no_Retrans_pcap_file)
+    os.popen(command).readlines()
+    extract_stream(no_Retrans_pcap_file,pcap_folder,client_ip,'tcp')
+    extract_stream(no_Retrans_pcap_file,client_ip,'udp')
+    if os.path.exists(no_Retrans_pcap_file):
+        shutil.rmtree(no_Retrans_pcap_file)
+        
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Extract tcp/udp stream from pcap file.')
     parser.add_argument('--pcap_file',type=str,help='The raw pacp filename.',required=True)
