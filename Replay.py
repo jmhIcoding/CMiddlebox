@@ -21,7 +21,7 @@ class ReplayDator():
             self.client_packets_id.add(each['id'])
         for each in self.stream['s2c']['meta']:
             self.server_packets_id.add(each['id'])
-def replay_client(_stream,remote_ip,remote_port,proto,thres=5):
+def replay_client(_stream,remote_ip,remote_port,proto,thres=10):
     ############
     ######
     ######
@@ -88,7 +88,7 @@ def is_port_used(ip,port,proto):
         return False
     finally:
         s.close()
-def replay_server(_stream,local_ip="0.0.0.0",local_port=0,thres=5):
+def replay_server(_stream,local_ip="0.0.0.0",local_port=0,thres=10):
     stream = _stream['s2c']
     proto = stream['meta'][0]['proto']
     server_ids = set()

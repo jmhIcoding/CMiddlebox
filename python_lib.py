@@ -23,7 +23,7 @@ def extractStream(pcapfilename,client_ip):
             dst_port = data['UDP'].dport
             payload =  bytes(data['UDP'].payload)
             proto='UDP'
-        if len(payload):
+        if True:
             packet={'proto':proto,'id':count,'src_ip':src_ip,'dst_ip':dst_ip,'src_port':src_port,'dst_port':dst_port,'payload_len':len(payload)}
             count +=1
             if src_ip==client_ip:

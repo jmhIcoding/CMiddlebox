@@ -11,6 +11,7 @@ from dbtool import MongoDBase
 import  Replay
 import  random
 import  threading
+import multiprocessing
 from CMiddlebox_Inbound_Server import Replay_Server
 app=Flask(__name__)
 #mongodb = MongoDBase(ip=config['mongodb_ip'])
@@ -29,11 +30,11 @@ def outbound_create_nchannel():
     response={'port':port}
     for each in global_inbound_process:
         try:
-            each._stop()
+            each.close()
         except:
             pass
     global_inbound_process.clear()
-    th = threading.Thread(target=Replay.replay_server,args=(replay_server.stream,"0.0.0.0",port,))
+    th = multiprocessing.Process(target=Replay.replay_server,args=(replay_server.stream,"0.0.0.0",port,))
     th.start()
     global_inbound_process.append(th)
     print(response)

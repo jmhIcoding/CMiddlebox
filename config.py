@@ -13,6 +13,6 @@ config = {
         'mongodb_pwd':'123456',
         'mongodb_dbname':'CMiddlebox',
         'mongodb_port':'27017',
-        'pcapname':'./wechat_all/tcp_stream1.pcap',
+        'pcapname':'./wechat_all/tcp_stream9.pcap',
         'pcapname_client_ip':"172.16.30.230"
         }

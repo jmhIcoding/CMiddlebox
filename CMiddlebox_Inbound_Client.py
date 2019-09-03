@@ -39,9 +39,11 @@ class Replay_Client(ReplayDator):
                 packet_id +=1
             else:
                 #原始数据包被拦截
+                
                 payload_index = self.stream['c2s']['meta'][packet_id]['payload_index']
                 print('[%d,%d) may contain keyword'%(0,len(self.stream['c2s']['payload'][payload_index])))
                 payload=self.stream['c2s']['payload'][payload_index]
+                print("packet:%d,[%d,%d) contains keyword"%(packet_id,0,len(payload)))
                 keyword_start,keyword_len = self.search_keyword(0,len(self.stream['c2s']['payload'][payload_index]),packet_id,False)
                 for i in range(len(keyword_start)):
                     payload =self.stream['c2s']['payload'][payload_index][keyword_start[i]:(keyword_start[i]+keyword_len[i])]
@@ -74,27 +76,62 @@ class Replay_Client(ReplayDator):
             #print(sssr)
 
             #Divide into 2 sepearate branches
+            '''
             self.stream['c2s']['payload'][payload_index]=payload_left_modified
             remote_port = self.requry_remote_port()
-
-            if replay_client(self.stream,self.replay_server_ip,remote_port,self.proto) == True:
+            
+            if flags==False && replay_client(self.stream,self.replay_server_ip,remote_port,self.proto) == True:
                 #go through middle box,means payload left half contains keyword
-                self.stream['c2s']['payload'][payload_index]=payload        #payload_right_modified
+                self.stream['c2s']['payload'][payload_index]=payload_right_modified        #payload_right_modified
                 print('[%d,%d) may contain keyword'%(l,mid))
-                lkeyword_start,lkeyword_len=self.search_keyword(l,mid,packet_id)
+                lkeyword_start,lkeyword_len=self.search_keyword(l,mid,packet_id,True)
             else:
+                print('[%d,%d) may not contain keyword'%(l,mid))
                 lkeyword_start,lkeyword_len=[l],[0]
 
             self.stream['c2s']['payload'][payload_index]=payload_right_modified
             remote_port = self.requry_remote_port()
             if replay_client(self.stream,self.replay_server_ip,remote_port,self.proto)==True:
                 #Means payload right contains keyword
-                self.stream['c2s']['payload'][payload_index]=payload        #payload_left_modified
+                self.stream['c2s']['payload'][payload_index]=payload_left_modified        #payload_left_modified
                 print('[%d,%d) may contain keyword'%(mid,r))
                 rkeyword_start,rkeyword_len =self.search_keyword(mid,r,packet_id)
             else:
+                print('[%d,%d) may not contain keyword'%(mid,r))
                 rkeyword_start,rkeyword_len=[mid+1],[0]
-            #Merge 2 seperate branches
+            '''
+            self.stream['c2s']['payload'][payload_index]=payload_left_modified
+            remote_port = self.requry_remote_port()
+            left_flag =    replay_client(self.stream,self.replay_server_ip,remote_port,self.proto)
+
+            self.stream['c2s']['payload'][payload_index]=payload_right_modified
+            remote_port = self.requry_remote_port()
+            right_flag =   replay_client(self.stream,self.replay_server_ip,remote_port,self.proto)
+            if flags== False and left_flag ==True and right_flag==False:
+                self.stream['c2s']['payload'][payload_index]=payload        #payload_right_modified
+                print('[%d,%d) may contain keyword'%(l,mid))
+                lkeyword_start,lkeyword_len=self.search_keyword(l,mid,packet_id,False)
+                rkeyword_start,rkeyword_len=[mid+1],[0]
+            elif flags== False and right_flag==True and left_flag==False:
+                self.stream['c2s']['payload'][payload_index]=payload      #payload_left_modified
+                print('[%d,%d) may contain keyword'%(mid,r))
+                rkeyword_start,rkeyword_len =self.search_keyword(mid,r,packet_id,False)
+                lkeyword_start,lkeyword_len=[l],[0]
+            elif flags==False and left_flag==False and right_flag==False:
+			#这应该是一个或的规则,整个数据包一定含有keyword,但是现在居然两边都False,说明两边同时存在或的规则,一次只改了一边不足矣!
+                self.stream['c2s']['payload'][payload_index]=payload_right_modified         #payload_right_modified
+                print('[%d,%d) may contain keyword'%(l,mid))
+                lkeyword_start,lkeyword_len=self.search_keyword(l,mid,packet_id,False)
+				
+                self.stream['c2s']['payload'][payload_index]=payload_left_modified      	#payload_left_modified
+                print('[%d,%d) may contain keyword'%(mid,r))
+                rkeyword_start,rkeyword_len =self.search_keyword(mid,r,packet_id,False)
+            elif flags==False and left_flag==True and right_flag==True:
+                print('[%d,%d) may not contain keyword'%(l,mid))
+                lkeyword_start,lkeyword_len=[l],[0]	
+                print('[%d,%d) may not contain keyword'%(mid,r))
+                rkeyword_start,rkeyword_len=[mid+1],[0]				
+			#Merge 2 seperate branches
             keyword_start=[]
             keyword_end=[]
             for i in range(len(lkeyword_start)):
